@@ -5,6 +5,10 @@
  * in the gevents.h interface.  The actual functions for receiving events
  * from the environment are implemented in the platform package.
  * 
+ * @version 2018/06/24
+ * - added hyperlink events
+ * @version 2018/06/23
+ * - added change events
  * @version 2018/06/20
  * - added mouse entered, exit, wheel events
  * @version 2016/11/26
@@ -179,6 +183,81 @@ std::string GActionEvent::toString() const {
 }
 
 
+GChangeEvent::GChangeEvent() {
+    this->eventClass = CHANGE_EVENT;
+    valid = false;
+}
+
+GChangeEvent::GChangeEvent(GEvent e) {
+    this->eventClass = CHANGE_EVENT;
+    valid = e.valid && e.eventClass == CHANGE_EVENT;
+    if (valid) {
+        eventClass = e.eventClass;
+        eventType = e.eventType;
+        modifiers = e.modifiers;
+        eventTime = e.eventTime;
+        source = e.source;
+    }
+}
+
+GChangeEvent::GChangeEvent(EventType type, GObject* source) {
+    this->eventClass = CHANGE_EVENT;
+    this->eventType = type;
+    this->source = source;
+    valid = true;
+}
+
+GObject* GChangeEvent::getSource() const {
+    return source;
+}
+
+std::string GChangeEvent::toString() const {
+    std::ostringstream os;
+    os << "GChangeEvent(";
+    switch (eventType) {
+    case STATE_CHANGED:  os << "STATE_CHANGED";  break;
+    }
+    os << ")";
+    return os.str();
+}
+
+
+GHyperlinkEvent::GHyperlinkEvent(EventType type, GObject* source, const std::string& url) {
+    this->eventClass = HYPERLINK_EVENT;
+    this->eventType = type;
+    this->source = source;
+    this->requestUrl = url;
+    this->valid = true;
+}
+
+GObject* GHyperlinkEvent::getSource() const {
+    return source;
+}
+
+std::string GHyperlinkEvent::getUrl() const {
+    return requestUrl;
+}
+
+std::string GHyperlinkEvent::toString() const {
+    return "GHyperlinkEvent(" + requestUrl + ")";
+}
+
+GHyperlinkEvent::GHyperlinkEvent() {
+    valid = false;
+}
+
+GHyperlinkEvent::GHyperlinkEvent(GEvent e) {
+    this->eventClass = HYPERLINK_EVENT;
+    valid = e.valid && e.eventClass == HYPERLINK_EVENT;
+    if (valid) {
+        this->source = e.source;
+        this->requestUrl = e.requestUrl;
+        this->eventTime = e.eventTime;
+    }
+}
+
+
+
 GKeyEvent::GKeyEvent() {
     valid = false;
 }
@@ -232,9 +311,9 @@ std::string GKeyEvent::toString() const {
     os << "GKeyEvent:";
     int ch = '\0';
     switch (eventType) {
-    case KEY_PRESSED:  os << "KEY_PRESSED";   ch = keyCode; break;
-    case KEY_RELEASED: os << "KEY_RELEASED";  ch = keyCode; break;
-    case KEY_TYPED:    os << "KEY_TYPED";     ch = keyChar; break;
+    case KEY_PRESSED:       os << "KEY_PRESSED";   ch = keyCode;  break;
+    case KEY_RELEASED:      os << "KEY_RELEASED";  ch = keyCode;  break;
+    case KEY_TYPED:         os << "KEY_TYPED";     ch = keyChar;  break;
     }
     if (isprint(ch)) {
         os << "('" << char(ch) << "')";
