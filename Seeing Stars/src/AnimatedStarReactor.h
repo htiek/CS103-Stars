@@ -2,6 +2,7 @@
 #define AnimatedStarReactor_Included
 
 #include "Reactor.h"
+#include "StateMachine.h"
 #include "StarType.h"
 #include "Star.h"
 #include "gtimer.h"
@@ -21,6 +22,8 @@ public:
     void setType(StarType type);
 
     void handleEvent(GEvent e) override;
+
+    static void installHandlers(StateMachineBuilder& builder);
 
 private /* helpers */:
     void handleTimerEvent(GTimerEvent e);
@@ -54,7 +57,7 @@ private /* state */:
     GLine* currentLine;
 
     /* Timer that keeps everything going. */
-    GTimer* timer;
+    GTimer timer;
 };
 
 

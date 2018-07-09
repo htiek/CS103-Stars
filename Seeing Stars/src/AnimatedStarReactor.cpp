@@ -1,4 +1,5 @@
 #include "AnimatedStarReactor.h"
+#include "HTMLWaiterReactor.h"
 #include <cmath>
 #include <tuple>
 #include <string>
@@ -28,7 +29,7 @@ namespace {
 }
 
 AnimatedStarReactor::AnimatedStarReactor(GWindow& window, StarType type)
-    : window(window), timer(new GTimer(kFrameDelay)) {
+    : window(window), timer(kFrameDelay) {
 
     /* Set up our line. */
     currentLine = new GLine(0, 0, 0, 0);
@@ -39,17 +40,14 @@ AnimatedStarReactor::AnimatedStarReactor(GWindow& window, StarType type)
     /* Kick things off! */
     setType(type);
 
-    timer->start();
+    timer.start();
 }
 
 AnimatedStarReactor::~AnimatedStarReactor() {
     window.remove(currentLine);
     delete currentLine;
 
-    /* TODO: Due to a race with the backend, don't deallocate the timer. Just leak it.
-     * This will get fixed in a later backend update.
-     */
-    timer->stop();
+    timer.stop();
 }
 
 void AnimatedStarReactor::setType(StarType type) {
@@ -84,7 +82,7 @@ size_t AnimatedStarReactor::currentLineProgress() const {
 }
 
 void AnimatedStarReactor::handleTimerEvent(GTimerEvent e) {
-    if (e.getGTimer() != *timer) return;
+    if (e.getGTimer() != timer) return;
 
     frame++;
 
@@ -138,4 +136,24 @@ void AnimatedStarReactor::handleEvent(GEvent e) {
     } else if (e.getEventClass() == HYPERLINK_EVENT) {
         handleHyperlinkEvent(GHyperlinkEvent(e));
     }
+}
+
+/* Script integration. */
+void AnimatedStarReactor::installHandlers(StateMachineBuilder& builder) {
+    /* Constructor: See what type of star to draw. Notice that we're always wrapped in an
+     * HTMLWaiterReactor.
+     */
+    builder.addReactor("AnimatedStarReactor", [](GraphicsSystem& graphics,
+                                                 const string& arguments,
+                                                 shared_ptr<Reactor> /* unused */) {
+        return make_shared<HTMLWaiterReactor>(make_shared<AnimatedStarReactor>(graphics.window, from_string(arguments)));
+    });
+
+    /* Transition: Check if we're done, and, if so, go to the indicated spot. */
+    builder.addTransition("AnimatedStarReactor", "Done", [](const string& target) {
+        return [target] (shared_ptr<Reactor> reactor) {
+            auto me = static_pointer_cast<HTMLWaiterReactor>(reactor);
+            return me->done()? trim(target) : "";
+        };
+    });
 }

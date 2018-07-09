@@ -4,6 +4,8 @@
  * This file implements the platform interface by passing commands to
  * a Java back end that manages the display.
  * 
+ * @version 2018/07/08
+ * - bug fix for GTimer deletion
  * @version 2018/06/24
  * - added hyperlink events
  * @version 2018/06/23
@@ -880,34 +882,34 @@ void Platform::gtimer_pause(double milliseconds) {
 }
 
 void Platform::gtimer_constructor(const GTimer& timer, double delay) {
-    std::ostringstream os;
-    os << timer.gtd;
-    std::string id = os.str();
+    std::string id = timer.getID();
     STATIC_VARIABLE(timerTable).put(id, timer.gtd);
-    os.str("");
+    std::ostringstream os;
     os << "GTimer.create(\"" << id << "\", " << delay << ")";
     putPipe(os.str());
 }
 
 void Platform::gtimer_delete(const GTimer& timer) {
-    std::ostringstream os;
-    os << timer.gtd;
-    std::string id = os.str();
-    STATIC_VARIABLE(timerTable).remove(id);
-    os.str("");
-    os << "GTimer.deleteTimer(\"" << id << "\")";
-    putPipe(os.str());
+    std::string id = timer.getID();
+    if (STATIC_VARIABLE(timerTable).containsKey(id)) {
+        STATIC_VARIABLE(timerTable).remove(id);
+        std::ostringstream os;
+        os << "GTimer.deleteTimer(\"" << id << "\")";
+        putPipe(os.str());
+    }
 }
 
 void Platform::gtimer_start(const GTimer& timer) {
+    std::string id = timer.getID();
     std::ostringstream os;
-    os << "GTimer.startTimer(\"" << timer.gtd << "\")";
+    os << "GTimer.startTimer(\"" << id << "\")";
     putPipe(os.str());
 }
 
 void Platform::gtimer_stop(const GTimer& timer) {
+    std::string id = timer.getID();
     std::ostringstream os;
-    os << "GTimer.stopTimer(\"" << timer.gtd << "\")";
+    os << "GTimer.stopTimer(\"" << id << "\")";
     putPipe(os.str());
 }
 
@@ -1291,14 +1293,10 @@ void Platform::gobject_setAntialiasing(bool value) {
 void Platform::garc_setFrameRectangle(GObject* gobj, double x, double y,
                                       double width, double height) {
     std::ostringstream os;
-    if (x >= 0 && y >= 0 && width >= 0 && height >= 0) {
-        os << "GArc.setFrameRectangle(\"" << gobj << "\", "
-           << x << ", " << y << ", "
-           << width << ", " << height << ")";
-        putPipe(os.str());
-    } else {
-        error("GArc::setFrameRectangle: x, y, w, h must all be non-negative");
-    }
+    os << "GArc.setFrameRectangle(\"" << gobj << "\", "
+       << x << ", " << y << ", "
+       << width << ", " << height << ")";
+    putPipe(os.str());
 }
 
 void Platform::gwindow_draw(const GWindow& gw, const GObject* gobj) {
@@ -1374,22 +1372,14 @@ void Platform::gline_constructor(GObject* gobj, double x1, double y1,
 
 void Platform::gline_setStartPoint(GObject* gobj, double x, double y) {
     std::ostringstream os;
-    if (x >= 0 && y >= 0) {
-        os << "GLine.setStartPoint(\"" << gobj << "\", " << x << ", " << y << ")";
-        putPipe(os.str());
-    } else {
-        error("GLine::setStartPoint: x and y must both be non-negative");
-    }
+    os << "GLine.setStartPoint(\"" << gobj << "\", " << x << ", " << y << ")";
+    putPipe(os.str());
 }
 
 void Platform::gline_setEndPoint(GObject* gobj, double x, double y) {
     std::ostringstream os;
-    if (x >= 0 && y >= 0) {
-        os << "GLine.setEndPoint(\"" << gobj << "\", " << x << ", " << y << ")";
-        putPipe(os.str());
-    } else {
-        error("GLine::setEndPoint: x and y must both be non-negative");
-    }
+    os << "GLine.setEndPoint(\"" << gobj << "\", " << x << ", " << y << ")";
+    putPipe(os.str());
 }
 
 void Platform::garc_constructor(GObject* gobj, double width, double height,
@@ -1525,12 +1515,8 @@ void Platform::gpolygon_constructor(GObject* gobj) {
 
 void Platform::gpolygon_addVertex(GObject* gobj, double x, double y) {
     std::ostringstream os;
-    if (x >= 0 && y >= 0) {
-        os << "GPolygon.addVertex(\"" << gobj << "\", " << x << ", " << y << ")";
-        putPipe(os.str());
-    } else {
-        error("GPolygon::addVertex: x and y must both be non-negative");
-    }
+    os << "GPolygon.addVertex(\"" << gobj << "\", " << x << ", " << y << ")";
+    putPipe(os.str());
 }
 
 void Platform::goval_constructor(GObject* gobj, double width, double height) {
@@ -3057,11 +3043,13 @@ static std::string getResult(bool consumeAcks, bool stopOnEvent,
         } else if (isEvent) {
             // a Java-originated event; enqueue it to process here
             GEvent event = parseEvent(line.substr(6));
-            STATIC_VARIABLE(eventQueue).enqueue(event);
-            if (stopOnEvent ||
-                    (event.getEventClass() == WINDOW_EVENT && event.getEventType() == CONSOLE_CLOSED
-                    && caller == "getLineConsole")) {
-                return "";
+            if (event.isValid()) {
+                STATIC_VARIABLE(eventQueue).enqueue(event);
+                if (stopOnEvent ||
+                        (event.getEventClass() == WINDOW_EVENT && event.getEventType() == CONSOLE_CLOSED
+                        && caller == "getLineConsole")) {
+                    return "";
+                }
             }
         } else {
             if (line.find("\tat ") != std::string::npos || line.find("   at ") != std::string::npos) {
@@ -3392,9 +3380,16 @@ static GEvent parseTimerEvent(TokenScanner& scanner, EventType type) {
     scanner.verifyToken(",");
     double time = scanDouble(scanner);
     scanner.verifyToken(")");
-    GTimerEvent e(type, GTimer(STATIC_VARIABLE(timerTable).get(id)));
-    e.setEventTime(time);
-    return e;
+
+    if (STATIC_VARIABLE(timerTable).containsKey(id)) {
+        GTimerEvent e(type, GTimer(STATIC_VARIABLE(timerTable).get(id)));
+        e.setEventTime(time);
+        return e;
+    } else {
+        // invalid timer ID; return an empty/invalid event
+        GTimerEvent e;
+        return e;
+    }
 }
 
 static GEvent parseWindowEvent(TokenScanner& scanner, EventType type) {

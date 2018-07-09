@@ -1,3 +1,10 @@
+<!-- StateMachine
+
+  HTML: Simple
+  Reactor: AnimatedStarReactor {8 / 2}
+  Transition: Done Find8
+
+-->
 <html>
   <body>
     <p>

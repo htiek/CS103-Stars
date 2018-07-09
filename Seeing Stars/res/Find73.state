@@ -1,3 +1,9 @@
+<!-- StateMachine
+HTML: Find73
+Reactor: RadialEditorReactor 7
+Transition: Star {7 / 3} DoneSecond7
+Transition: Star {7 / 1} NiceTry7
+-->
 <html>
   <body>
     <p>
@@ -6,6 +12,7 @@
     </p>
     <p>
       In the space to the right, try drawing a <b>different</b> seven-pointed star from the one you just drew.
+      To make your life a bit easier, we've drawn out seven points for you. You just need to connect them.
     </p>
     <p>
       Made a mistake? You can <a href="reset">reset</a> the display.
@@ -14,7 +21,7 @@
       For reference, here's the star you drew:
     </p>
     <p>
-      <img src="https://web.stanford.edu/~htiek/cs103-stars/7_3.png">
+      <img src="https://web.stanford.edu/~htiek/cs103-stars/7_2.png">
     </p>
   </body>
 </html>

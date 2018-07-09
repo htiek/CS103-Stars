@@ -1,3 +1,9 @@
+<!-- StateMachine
+  HTML: Find12
+  Reactor: RadialEditorReactor 12
+  Transition: Star {12 / 5} Done12
+  Transition: Star {12 / 1} NiceTry12
+-->
 <html>
   <body>
     <p>

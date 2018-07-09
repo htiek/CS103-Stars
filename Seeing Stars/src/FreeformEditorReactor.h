@@ -10,6 +10,7 @@
 #include "Reactor.h"
 #include "StarType.h"
 #include "Star.h"
+#include "StateMachine.h"
 #include "gwindow.h"
 #include "gobjects.h"
 #include "gtimer.h"
@@ -40,6 +41,9 @@ public:
     StarType type() const;
 
     void handleEvent(GEvent e) override;
+
+    static void installHandlers(StateMachineBuilder& builder);
+
 
 private /* Helpers */:
     void handleMouseEvent(GMouseEvent e);

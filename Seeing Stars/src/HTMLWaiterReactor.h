@@ -2,6 +2,7 @@
 #define HTMLWaiterReactor_Included
 
 #include "Reactor.h"
+#include "StateMachine.h"
 #include <memory>
 
 /* Reactor type that just waits for an HTML event that says "next."
@@ -15,6 +16,8 @@ public:
     HTMLWaiterReactor(std::shared_ptr<Reactor> previous);
     void handleEvent(GEvent e) override;
     bool done() const;
+
+    static void installHandlers(StateMachineBuilder& builder);
 
 private:
     std::shared_ptr<Reactor> previous;

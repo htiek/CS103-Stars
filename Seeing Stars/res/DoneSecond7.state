@@ -1,3 +1,8 @@
+<!-- StateMachine
+HTML: DoneSecond7
+Reactor: HTMLWaiterReactor
+Transition: Done Algorithm
+-->
 <html>
   <body>
     <p>

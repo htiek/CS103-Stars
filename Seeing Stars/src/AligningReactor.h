@@ -2,6 +2,7 @@
 #define AligningReactor_Included
 
 #include "Reactor.h"
+#include "StateMachine.h"
 #include "Star.h"
 #include "gtimer.h"
 #include <vector>
@@ -24,6 +25,9 @@ public:
     /* Reports whether the animation has finished. */
     bool done() const;
 
+
+    static void installHandlers(StateMachineBuilder& builder);
+
 private:
     /* Underlying star. */
     std::shared_ptr<Star> theStar;
@@ -36,7 +40,7 @@ private:
     std::size_t frame = 0;
 
     /* Timer to advance the animation. */
-    GTimer* timer;
+    GTimer timer;
 };
 
 #endif

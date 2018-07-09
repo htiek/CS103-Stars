@@ -1,3 +1,8 @@
+<!-- StateMachine
+HTML: Welcome
+Reactor: FreeformEditorReactor
+Transition: Star { 5 / 2 } Animate5
+-->
 <html>
   <body>
     <h1>CS103: Seeing Stars</h1>
@@ -5,7 +10,8 @@
       Welcome to CS103! This first assignment is all about drawing stars.
     </p>
     <p>
-      In the space to your left, go and draw a standard, five-pointed star.
+      In the space to your right, go and draw a standard, five-pointed star.
+      The editor expects you to click and drag to draw lines.
     </p>
     <p>
       Made a mistake? You can <a href="reset">reset</a> the display.

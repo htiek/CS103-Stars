@@ -1,9 +1,11 @@
 #include "FreeformEditorReactor.h"
 #include "StarType.h"
+#include "strlib.h"
 #include <algorithm>
 #include <limits>
 #include <unordered_map>
 #include <unordered_set>
+#include <sstream>
 using namespace std;
 
 namespace {
@@ -175,4 +177,32 @@ GPoint FreeformEditorReactor::center() const {
 
 StarType FreeformEditorReactor::type() const {
     return theType;
+}
+
+/* Script integration. */
+void FreeformEditorReactor::installHandlers(StateMachineBuilder& builder) {
+    /* Constructor: No arguments. */
+    builder.addReactor("FreeformEditorReactor", [](GraphicsSystem& graphics,
+                                                   const string& /* no arguments */,
+                                                   shared_ptr<Reactor> /* unused */) {
+        return make_shared<FreeformEditorReactor>(graphics.window);
+    });
+
+    /* Transition: Check if we're done, and, if so, go to the indicated spot. */
+    builder.addTransition("FreeformEditorReactor", "Star", [](const string& args) {
+        /* Extract a star type and a destination page. */
+        StarType type;
+        string destination;
+
+        istringstream extractor(args);
+        extractor >> type;
+        getline(extractor, destination);
+
+        if (!extractor) error("Could not parse star transition.");
+
+        return [type, destination] (shared_ptr<Reactor> reactor) {
+            auto me = static_pointer_cast<FreeformEditorReactor>(reactor);
+            return me->type() == type? trim(destination) : "";
+        };
+    });
 }

@@ -1,5 +1,8 @@
 #include "AligningReactor.h"
+#include "FreeformEditorReactor.h"
+#include "strlib.h"
 #include <cmath>
+#include <memory>
 using namespace std;
 
 namespace {
@@ -78,8 +81,8 @@ namespace {
 
 AligningReactor::AligningReactor(shared_ptr<Star> star,
                                  const std::vector<StarPoint *>& order,
-                                 const GPoint &center) :
-    theStar(star), timer(new GTimer(kTimerDelay)) {
+                                 const GPoint& center) :
+    theStar(star), timer(kTimerDelay) {
 
     /* Get the final positions for each point in circular coordinate space. */
     auto angles = destinationAnglesFor(order.size());
@@ -116,15 +119,11 @@ AligningReactor::AligningReactor(shared_ptr<Star> star,
         targets[order[i]] = destinations[(i + bestOffset) % destinations.size()];
     }
 
-    timer->start();
+    timer.start();
 }
 
 AligningReactor::~AligningReactor() {
-    timer->stop();
-
-    /* TODO: The above leaks a timer to avoid a race condition with the backend. When we patch
-     * the backend, we will fix this.
-     */
+    timer.stop();
 }
 
 void AligningReactor::handleEvent(GEvent e) {
@@ -132,7 +131,7 @@ void AligningReactor::handleEvent(GEvent e) {
     if (done()) return;
 
     /* We shouldn't react to someone else's timer. */
-    if (e.getEventClass() != TIMER_EVENT || GTimerEvent(e).getGTimer() != *timer) return;
+    if (e.getEventClass() != TIMER_EVENT || GTimerEvent(e).getGTimer() != timer) return;
 
     /* Advance the animation one step forward. */
     frame++;
@@ -166,9 +165,30 @@ void AligningReactor::handleEvent(GEvent e) {
     theStar->window().repaint();
 
     /* If we're done, stop the timer. */
-    if (done()) timer->stop();
+    if (done()) timer.stop();
 }
 
 bool AligningReactor::done() const {
     return frame == kAnimationFrames;
+}
+
+/* Script integration. */
+void AligningReactor::installHandlers(StateMachineBuilder& builder) {
+    /* Constructor: No arguments. Steal the existing FreeformEditorReactor's fields. */
+    builder.addReactor("AligningReactor", [](GraphicsSystem&,   /* not needed */
+                                             const string& /* no arguments */,
+                                             shared_ptr<Reactor> previous) {
+        auto fer = dynamic_pointer_cast<FreeformEditorReactor>(previous);
+        if (!fer) error("Previous reactor type was incorrect.");
+
+        return make_shared<AligningReactor>(fer->star(), fer->pointsInOrder(), fer->center());
+    });
+
+    /* Transition: Check if we're done, and, if so, go to the indicated spot. */
+    builder.addTransition("AligningReactor", "Done", [](const string& target) {
+        return [target] (shared_ptr<Reactor> reactor) {
+            auto me = static_pointer_cast<AligningReactor>(reactor);
+            return me->done()? trim(target) : "";
+        };
+    });
 }

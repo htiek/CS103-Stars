@@ -3,6 +3,7 @@
 
 #include "Reactor.h"
 #include "Star.h"
+#include "StateMachine.h"
 #include <vector>
 
 /* Editor that presents a fixed set of points in a radial layout for the user to connect. */
@@ -13,6 +14,8 @@ public:
 
     void handleEvent(GEvent e) override;
     StarType type() const;
+
+    static void installHandlers(StateMachineBuilder& builder);
 
 private /* helpers */:
     void handleMouseEvent(GMouseEvent e);
