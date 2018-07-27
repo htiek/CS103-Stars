@@ -210,7 +210,7 @@ StarType starTypeOf(const Star& graphics, const vector<StarPoint *>& order) {
 tuple<shared_ptr<Star>, vector<StarPoint *>> radialLayoutFor(GWindow& window, size_t numPoints) {
     /* Information about the angles to use. */
     double thetaStep = -2 * M_PI / numPoints;           // Negative so that we move clockwise
-    double thetaBase =  3 * M_PI / 2 + thetaStep / 2.0; // Place point 0 at the bottom.
+    double thetaBase =  3 * M_PI / 2 + (numPoints % 2) * thetaStep / 2.0; // Place point 0 at the bottom.
 
     /* Radius to use. */
     double radius  = min(window.getCanvasWidth(), window.getCanvasHeight()) / 2.0 - StarPoint::kRadius - kWindowPadding;
