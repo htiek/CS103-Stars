@@ -68,7 +68,13 @@ void StateMachine::handleEvent(GEvent e) {
  *                             specific.
  */
 void StateMachine::setState(const string& state) {
+    /* Report that we've changed state. */
+    for (auto& entry: plugins) {
+        entry.second->onStateChanged(state);
+    }
+
     auto source = reader(state);
+
 
     /* Confirm that the first line matches what we expect. */
     string firstLine;
@@ -151,6 +157,11 @@ shared_ptr<Reactor> StateMachine::currentReactor() const {
     return reactor;
 }
 
+shared_ptr<Plugin> StateMachine::pluginNamed(const string& name) const {
+    if (!plugins.count(name)) error("No pluging named " + name + " exists.");
+    return plugins.at(name);
+}
+
 /* * * * * StateMachineBuilder implementation * * * * */
 StateMachineBuilder::StateMachineBuilder(shared_ptr<GraphicsSystem> graphics,
                                          const string& initialState,
@@ -180,6 +191,11 @@ void StateMachineBuilder::addTransition(const string& reactorName,
     }
 
     result.transitionConstructors[reactorName][name] = constructor;
+}
+
+void StateMachineBuilder::addPlugin(const string& name, std::shared_ptr<Plugin> plugin) {
+    if (result.plugins.count(name)) error("Duplicate plugin: " + name);
+    result.plugins[name] = plugin;
 }
 
 shared_ptr<StateMachine> StateMachineBuilder::build() const {

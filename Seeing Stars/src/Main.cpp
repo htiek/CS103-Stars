@@ -6,6 +6,7 @@
 #include "RadialEditorReactor.h"
 #include "StateMachine.h"
 #include "GeneralHTMLReactor.h"
+#include "SummaryReactor.h"
 #include "Grabbag.h"
 #include "gwindow.h"
 #include "gobjects.h"
@@ -13,15 +14,6 @@
 #include "ginteractors.h"
 #include <iostream>
 #include <fstream>
-#include <string>
-#include <memory>
-#include <vector>
-#include <algorithm>
-#include <cmath>
-#include <sstream>
-#include <unordered_map>
-#include <unordered_set>
-#include <set>
 using namespace std;
 
 namespace {
@@ -108,6 +100,7 @@ namespace {
         HTMLWaiterReactor::installHandlers(builder);
         GeneralHTMLReactor::installHandlers(builder);
         RadialEditorReactor::installHandlers(builder);
+        SummaryReactor::installHandlers(builder);
 
         return builder.build();
     }

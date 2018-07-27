@@ -61,6 +61,18 @@ using TransitionConstructor =
 using StateReader =
   std::function<std::unique_ptr<std::istream> (const std::string &)>;
 
+/* Type: Plugin
+ *
+ * A type representing something that can plug into the StateMachine. It receives updates
+ * about what transitions are being followed.
+ */
+class Plugin {
+public:
+    virtual ~Plugin() = default;
+
+    virtual void onStateChanged(const std::string& state) = 0;
+};
+
 /* Type: StateMachine
  *
  * Type that represents a state machine. Drives the execution of a particular state machine.
@@ -73,6 +85,9 @@ public:
     /* Accessors for the underlying components. */
     std::shared_ptr<Reactor> currentReactor() const;
     std::shared_ptr<GraphicsSystem> graphicsSystem() const;
+
+    /* Accessors for plugins. */
+    std::shared_ptr<Plugin> pluginNamed(const std::string& name) const;
 
 private /* helpers */:
     friend class StateMachineBuilder;
@@ -98,6 +113,8 @@ private /* state */:
     std::shared_ptr<GraphicsSystem> graphics;
 
     StateReader reader;
+
+    std::unordered_map<std::string, std::shared_ptr<Plugin>> plugins;
 };
 
 class StateMachineBuilder {
@@ -110,6 +127,8 @@ public:
     void addTransition(const std::string& reactor,
                        const std::string& name,
                        TransitionConstructor constructor);
+
+    void addPlugin(const std::string& name, std::shared_ptr<Plugin> plugin);
 
     std::shared_ptr<StateMachine> build() const;
 
