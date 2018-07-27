@@ -5,6 +5,7 @@
 #include "AnimatedStarReactor.h"
 #include "RadialEditorReactor.h"
 #include "StateMachine.h"
+#include "Grabbag.h"
 #include "gwindow.h"
 #include "gobjects.h"
 #include "gevents.h"
@@ -22,45 +23,92 @@
 #include <set>
 using namespace std;
 
-/* Total window dimensions. */
-const double kWindowWidth  = 1000;
-const double kWindowHeight = 400;
+namespace {
+    /* Total window dimensions. */
+    const double kWindowWidth  = 1000;
+    const double kWindowHeight = 800;
 
-/* Width allocated to the canvas. */
-const double kCanvasWidth = kWindowWidth / 2.0;
+    /* Width allocated to the canvas. */
+    const double kCanvasWidth = kWindowWidth / 2.0;
 
-/* Constructs the graphics system. */
-shared_ptr<GraphicsSystem> makeGraphics() {
-    shared_ptr<GraphicsSystem> result = make_shared<GraphicsSystem>();
+    /* Constant representing the comment to look for when injecting a new piece of content. */
+    const string kInjectionSite   = "<!-- Inject ";
+    const string kInjectionCloser = "-->";
 
-    result->window.setSize(kWindowWidth, kWindowHeight);
-    result->window.setExitOnClose();
+    /* Constructs the graphics system. */
+    shared_ptr<GraphicsSystem> makeGraphics() {
+        shared_ptr<GraphicsSystem> result = make_shared<GraphicsSystem>();
 
-    result->pane = new GFormattedPane();
-    result->pane->setSize(kWindowWidth - kCanvasWidth, kWindowHeight);
-    result->window.addToRegion(result->pane, "WEST");
-    return result;
-}
+        result->window.setSize(kWindowWidth, kWindowHeight);
+        result->window.setExitOnClose();
 
-/* Data is sourced from disk. */
-unique_ptr<istream> readState(const string& state) {
-    /* TODO: With C++14 support, use make_unique. */
-    unique_ptr<istream> result(new ifstream(state + ".state"));
-    if (!*result) error("Could not load file " + state + ".state");
+        result->pane = new GFormattedPane();
+        result->pane->setSize(kWindowWidth - kCanvasWidth, kWindowHeight);
+        result->window.addToRegion(result->pane, "WEST");
+        return result;
+    }
 
-    return result;
-}
+    /* Given a string, replaces all injection sites with the appropriate contents. */
+    string replaceInjectionSitesIn(const string& str, const Grabbag& grabbag) {
+        string result;
 
-shared_ptr<StateMachine> createStateMachine() {
-    StateMachineBuilder builder(makeGraphics(), "Welcome", readState);
+        size_t index = 0;
+        while (true) {
+            /* See if we can find an injection site. */
+            size_t site = str.find(kInjectionSite, index);
 
-    AligningReactor::installHandlers(builder);
-    AnimatedStarReactor::installHandlers(builder);
-    FreeformEditorReactor::installHandlers(builder);
-    HTMLWaiterReactor::installHandlers(builder);
-    RadialEditorReactor::installHandlers(builder);
+            /* If there isn't one, then whatever we've assembled so far, plus the rest
+             * of the string, is the final result.
+             */
+            if (site == string::npos) return result + str.substr(index);
 
-    return builder.build();
+            /* Otherwise, we found an injection site. Everything up to this point is
+             * perfectly safe to add in.
+             */
+            result += string(str.begin() + index, str.begin() + site);
+
+            /* Otherwise, we found a site. See what to replace it with. */
+            size_t endpoint = str.find(kInjectionCloser, site);
+            if (endpoint == string::npos) error("Unterminated injection site?");
+
+            /* Get the filename from this range. */
+            string filename(str.begin() + site + kInjectionSite.size(),
+                            str.begin() + endpoint);
+
+            /* Recursively replace injections within that file and append that to the result. */
+            result += replaceInjectionSitesIn(grabbag.contentsOf(trim(filename)), grabbag);
+
+            /* Scoot past this point in the file. */
+            index = endpoint + kInjectionCloser.size();
+        }
+    }
+
+    /* Data sourcing function for a Grabbag. */
+    StateReader grabbagReader(const string& grabbagFile) {
+        ifstream input(grabbagFile);
+        if (!input) error("Cannot open grabbag file " + grabbagFile);
+
+        Grabbag grabbag(input);
+
+        return [grabbag](const string& filename) {
+            string text = grabbag.contentsOf("states/" + filename + ".state");
+
+            /* TODO: With C++14 support, use make_unique. */
+            return unique_ptr<istringstream>(new istringstream(replaceInjectionSitesIn(text, grabbag)));
+        };
+    }
+
+    shared_ptr<StateMachine> createStateMachine() {
+        StateMachineBuilder builder(makeGraphics(), "Welcome", grabbagReader("assignment.grabbag"));
+
+        AligningReactor::installHandlers(builder);
+        AnimatedStarReactor::installHandlers(builder);
+        FreeformEditorReactor::installHandlers(builder);
+        HTMLWaiterReactor::installHandlers(builder);
+        RadialEditorReactor::installHandlers(builder);
+
+        return builder.build();
+    }
 }
 
 int main() {
