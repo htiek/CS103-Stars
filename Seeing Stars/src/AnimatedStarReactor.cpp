@@ -143,10 +143,9 @@ void AnimatedStarReactor::installHandlers(StateMachineBuilder& builder) {
     /* Constructor: See what type of star to draw. Notice that we're always wrapped in an
      * HTMLWaiterReactor.
      */
-    builder.addReactor("AnimatedStarReactor", [](GraphicsSystem& graphics,
-                                                 const string& arguments,
-                                                 shared_ptr<Reactor> /* unused */) {
-        return make_shared<HTMLWaiterReactor>(make_shared<AnimatedStarReactor>(graphics.window, from_string(arguments)));
+    builder.addReactor("AnimatedStarReactor", [](StateMachine& machine,
+                                                 const string& args) {
+        return make_shared<HTMLWaiterReactor>(make_shared<AnimatedStarReactor>(machine.graphicsSystem()->window, from_string(args)));
     });
 
     /* Transition: Check if we're done, and, if so, go to the indicated spot. */

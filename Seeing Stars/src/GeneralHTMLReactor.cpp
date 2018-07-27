@@ -15,9 +15,8 @@ string GeneralHTMLReactor::lastLinkClicked() const {
 /* Script integration. */
 void GeneralHTMLReactor::installHandlers(StateMachineBuilder& builder) {
     /* Constructor: Decorate the previous reactor. */
-    builder.addReactor("GeneralHTMLReactor", [](GraphicsSystem&    /* unused */,
-                                                const string& /* no arguments */,
-                                                shared_ptr<Reactor> /* unused */) {
+    builder.addReactor("GeneralHTMLReactor", [](StateMachine &,
+                                                const std::string &) {
         return make_shared<GeneralHTMLReactor>();
     });
 

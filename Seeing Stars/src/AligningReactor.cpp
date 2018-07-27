@@ -175,10 +175,8 @@ bool AligningReactor::done() const {
 /* Script integration. */
 void AligningReactor::installHandlers(StateMachineBuilder& builder) {
     /* Constructor: No arguments. Steal the existing FreeformEditorReactor's fields. */
-    builder.addReactor("AligningReactor", [](GraphicsSystem&,   /* not needed */
-                                             const string& /* no arguments */,
-                                             shared_ptr<Reactor> previous) {
-        auto fer = dynamic_pointer_cast<FreeformEditorReactor>(previous);
+    builder.addReactor("AligningReactor", [](StateMachine& machine, const string &) {
+        auto fer = dynamic_pointer_cast<FreeformEditorReactor>(machine.currentReactor());
         if (!fer) error("Previous reactor type was incorrect.");
 
         return make_shared<AligningReactor>(fer->star(), fer->pointsInOrder(), fer->center());

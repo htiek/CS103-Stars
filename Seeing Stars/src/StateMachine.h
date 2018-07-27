@@ -11,6 +11,12 @@
 #include <unordered_map>
 #include <istream>
 
+/* Type: StateMachine
+ *
+ * A state machine capable of driving execution.
+ */
+class StateMachine;
+
 /* Type: GraphicsSystem
  *
  * Type representing the graphics system used by the program.
@@ -23,12 +29,10 @@ struct GraphicsSystem {
 /* Type: ReactorConstructor
  *
  * Function that constructs a reactor given a string description of the reactor to construct
- * and the previous reactor that was installed.
+ * and the current state machine.
  */
 using ReactorConstructor =
-  std::function<std::shared_ptr<Reactor> (GraphicsSystem&,
-                                          const std::string&,
-                                          std::shared_ptr<Reactor>)>;
+  std::function<std::shared_ptr<Reactor> (StateMachine&, const std::string& args)>;
 
 /* Type: Transition
  *
@@ -51,10 +55,11 @@ using TransitionConstructor =
 
 /* Type: StateReader
  *
- * Function that takes in a string and returns an istream that can pull data from that source.
+ * Function that takes in a string representing the name of a state and returns an istream
+ * containing the text of that state.
  */
 using StateReader =
-  std::function<std::unique_ptr<std::istream> (const std::string&)>;
+  std::function<std::unique_ptr<std::istream> (const std::string &)>;
 
 /* Type: StateMachine
  *
@@ -62,7 +67,12 @@ using StateReader =
  */
 class StateMachine {
 public:
+    /* Responds to a top-level window event. */
     void handleEvent(GEvent e);
+
+    /* Accessors for the underlying components. */
+    std::shared_ptr<Reactor> currentReactor() const;
+    std::shared_ptr<GraphicsSystem> graphicsSystem() const;
 
 private /* helpers */:
     friend class StateMachineBuilder;

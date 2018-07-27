@@ -119,7 +119,7 @@ void StateMachine::setReactor(istream& command, string& reactorName) {
     string args;
     getline(command, args);
 
-    reactor = reactorConstructors[reactorName](*graphics, args, reactor);
+    reactor = reactorConstructors[reactorName](*this, args);
 
     /* Clear out any transitions; they're now stale. */
     transitions.clear();
@@ -141,6 +141,14 @@ void StateMachine::addTransition(istream& command, const string& reactorName) {
     getline(command, args);
 
     transitions.push_back(transitionConstructors.at(reactorName).at(transitionType)(args));
+}
+
+shared_ptr<GraphicsSystem> StateMachine::graphicsSystem() const {
+    return graphics;
+}
+
+shared_ptr<Reactor> StateMachine::currentReactor() const {
+    return reactor;
 }
 
 /* * * * * StateMachineBuilder implementation * * * * */

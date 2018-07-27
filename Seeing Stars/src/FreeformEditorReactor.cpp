@@ -182,10 +182,9 @@ StarType FreeformEditorReactor::type() const {
 /* Script integration. */
 void FreeformEditorReactor::installHandlers(StateMachineBuilder& builder) {
     /* Constructor: No arguments. */
-    builder.addReactor("FreeformEditorReactor", [](GraphicsSystem& graphics,
-                                                   const string& /* no arguments */,
-                                                   shared_ptr<Reactor> /* unused */) {
-        return make_shared<FreeformEditorReactor>(graphics.window);
+    builder.addReactor("FreeformEditorReactor", [](StateMachine& machine,
+                                                   const string &) {
+        return make_shared<FreeformEditorReactor>(machine.graphicsSystem()->window);
     });
 
     /* Transition: Check if we're done, and, if so, go to the indicated spot. */

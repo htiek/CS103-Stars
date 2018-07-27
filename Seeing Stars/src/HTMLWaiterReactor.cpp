@@ -22,10 +22,8 @@ bool HTMLWaiterReactor::done() const {
 /* Script integration. */
 void HTMLWaiterReactor::installHandlers(StateMachineBuilder& builder) {
     /* Constructor: Decorate the previous reactor. */
-    builder.addReactor("HTMLWaiterReactor", [](GraphicsSystem&    /* unused */,
-                                               const string& /* no arguments */,
-                                               shared_ptr<Reactor> toWrap) {
-        return make_shared<HTMLWaiterReactor>(toWrap);
+    builder.addReactor("HTMLWaiterReactor", [](StateMachine& machine, const string &) {
+        return make_shared<HTMLWaiterReactor>(machine.currentReactor());
     });
 
     /* Transition: Check if we're done, and, if so, go to the indicated spot. */

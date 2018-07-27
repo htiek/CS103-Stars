@@ -101,10 +101,8 @@ void RadialEditorReactor::handleEvent(GEvent e) {
 /* Script integration. */
 void RadialEditorReactor::installHandlers(StateMachineBuilder& builder) {
     /* Constructor: See how many points to use. */
-    builder.addReactor("RadialEditorReactor", [](GraphicsSystem& graphics,
-                                                 const string& arguments,
-                                                 shared_ptr<Reactor> /* unused */) {
-        return make_shared<RadialEditorReactor>(graphics.window, stringToInteger(arguments));
+    builder.addReactor("RadialEditorReactor", [](StateMachine& machine, const string& args) {
+        return make_shared<RadialEditorReactor>(machine.graphicsSystem()->window, stringToInteger(args));
     });
 
     /* Transition: Check if we're done, and, if so, go to the indicated spot. */
