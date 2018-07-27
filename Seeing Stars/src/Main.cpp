@@ -5,6 +5,7 @@
 #include "AnimatedStarReactor.h"
 #include "RadialEditorReactor.h"
 #include "StateMachine.h"
+#include "GeneralHTMLReactor.h"
 #include "Grabbag.h"
 #include "gwindow.h"
 #include "gobjects.h"
@@ -105,6 +106,7 @@ namespace {
         AnimatedStarReactor::installHandlers(builder);
         FreeformEditorReactor::installHandlers(builder);
         HTMLWaiterReactor::installHandlers(builder);
+        GeneralHTMLReactor::installHandlers(builder);
         RadialEditorReactor::installHandlers(builder);
 
         return builder.build();
